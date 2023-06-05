@@ -1,0 +1,61 @@
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xpostgresqlinstances.aws.database.example.org
+  labels:
+    provider: aws
+    guide: quickstart
+    vpc: default
+    crossplane.io/xrd: xpostgresqlinstances.database.example.org  
+spec:
+  writeConnectionSecretsToNamespace: crossplane-system
+  compositeTypeRef:
+    apiVersion: database.example.org/v1alpha1
+    kind: XPostgreSQLInstance
+  resources:
+    - name: rdsinstance
+      base:
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: Instance
+        spec:
+          forProvider:
+            region: eu-central-1
+            instanceClass: db.t3.micro
+            username: adminuser
+            engine: postgres
+            engineVersion: "12"
+            skipFinalSnapshotBeforeDeletion: true
+            publiclyAccessible: false
+            autoGeneratePassword: true
+            passwordSecretRef:
+              key: password
+              name: example-rdsinstance
+              namespace: crossplane-system
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+      patches:
+        - fromFieldPath: "metadata.uid"
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-postgresql"
+        - fromFieldPath: "spec.parameters.storageGB"
+          toFieldPath: "spec.forProvider.allocatedStorage"
+      connectionDetails:
+        - type: FromFieldPath
+          name: username
+          fromFieldPath: spec.forProvider.username
+        - type: FromConnectionSecretKey
+          name: password
+          fromConnectionSecretKey: attribute.password    
+        - fromConnectionSecretKey: endpoint
+        - fromConnectionSecretKey: port
+  functions:
+  - name: quotable
+    type: Container
+    container:
+      image: docker.io/bmutziu/xfn-quotable-simple:v0.0.0
+      network:
+        policy: Runner

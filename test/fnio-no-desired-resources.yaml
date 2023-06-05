@@ -1,0 +1,29 @@
+apiVersion: apiextensions.crossplane.io/v1alpha1
+kind: FunctionIO
+config:
+  apiVersion: database.example.org/v1alpha1
+  kind: Config
+  metadata:
+    name: rdsconfig
+  spec:
+    version: 12
+observed:
+  composite:
+    resource:
+      apiVersion: database.example.org/v1alpha1
+      kind: XPostgreSQLInstance
+      metadata:
+        name: my-db-rpw4j
+      spec:
+        parameters:
+          storageGB: 20
+        compositionSelector:
+          matchLabels:
+            provider: aws
+      status:
+        conditions:
+          - type: Ready
+            status: True
+    connectionDetails:
+      - name: endpoint
+        value: my-db-rpw4j-f75dp.cvksvfsnwzou.eu-central-1.rds.amazonaws.com:5432
