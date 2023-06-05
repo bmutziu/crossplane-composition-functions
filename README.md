@@ -1,2 +1,2 @@
-# rossplane-composition-functions
+# crossplane-composition-functions
 Composition Functions in Crossplane
